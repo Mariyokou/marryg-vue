@@ -1,4 +1,4 @@
-# tic-tac-toe
+# marryg-vue
 
 ## Project setup
 ```
