@@ -14,6 +14,10 @@
           </button>
         </div>
       </div>
+      <svg v-if="isWin" class="winner-line">
+        <line :x1="winnerLineCoords.x1" :y1="winnerLineCoords.y1" 
+          :x2="winnerLineCoords.x2" :y2="winnerLineCoords.y2"></line>
+      </svg>
     </div>
   </div>
 </template>
@@ -32,6 +36,8 @@ export default {
         1: 'x',
         2: 'o',
       },
+      winnerLineCoords: {},
+      isWin: false,
     }
   },
   created() {
@@ -54,25 +60,34 @@ export default {
       this.isWin = this.checkWinnerHorizontally() 
         || this.checkWinnerVertically()
         || this.checkWinnerDiagonally();
-      
+
       this.currentPlayer = this.currentPlayer === '1'
         ? '2' 
         : '1';      
     },
     checkWinnerHorizontally() {
       let isFilled = false;
+      const getWinnerLineYCoord = (index) => index * 94 + 47;
 
-      this.gameValues.forEach((row) => {
+      this.gameValues.forEach((row, index) => {
         if (isFilled) { return; }
 
         const uniqSymbolsInLine = [...new Set(row)];
         isFilled = uniqSymbolsInLine.length === 1 && !!uniqSymbolsInLine[0];
+
+        if (isFilled) {
+          Vue.set(this.winnerLineCoords, 'x1', 0);
+          Vue.set(this.winnerLineCoords, 'y1', getWinnerLineYCoord(index));
+          Vue.set(this.winnerLineCoords, 'x2', 94 * this.size);
+          Vue.set(this.winnerLineCoords, 'y2', getWinnerLineYCoord(index));
+        }
       });
 
       return isFilled;
     },
     checkWinnerVertically() {
       let isFilled = false;
+      const getWinnerLineXCoord = (index) => index * 94 + 45;
 
       this.gameValues.forEach((row, index) => {
         if (isFilled) { return; }
@@ -88,6 +103,13 @@ export default {
         });
 
         isFilled = columnValues.length === 1 && !!columnValues[0];
+
+        if (isFilled) {
+          Vue.set(this.winnerLineCoords, 'y1', 0);
+          Vue.set(this.winnerLineCoords, 'x1', getWinnerLineXCoord(index));
+          Vue.set(this.winnerLineCoords, 'y2', 94 * this.size);
+          Vue.set(this.winnerLineCoords, 'x2', getWinnerLineXCoord(index));
+        }
       });
 
       return isFilled;
@@ -108,8 +130,25 @@ export default {
         }
       });
 
-      return (diagonal1Values.length === 1 && !!diagonal1Values[0])
-        || (diagonal2Values.length === 1 && !!diagonal2Values[0]);
+      if (diagonal1Values.length === 1 && !!diagonal1Values[0]) {
+        Vue.set(this.winnerLineCoords, 'x1', 0);
+        Vue.set(this.winnerLineCoords, 'y1', 0);
+        Vue.set(this.winnerLineCoords, 'x2', 94 * this.size);
+        Vue.set(this.winnerLineCoords, 'y2', 94 * this.size);
+
+        return true;
+      }
+
+      if (diagonal2Values.length === 1 && !!diagonal2Values[0]) {
+        Vue.set(this.winnerLineCoords, 'x1', 0);
+        Vue.set(this.winnerLineCoords, 'y1', 92 * this.size);
+        Vue.set(this.winnerLineCoords, 'x2', 92 * this.size);
+        Vue.set(this.winnerLineCoords, 'y2', 0);
+
+        return true;
+      }
+
+      return false;
     }
   }
 }
@@ -123,6 +162,7 @@ export default {
   .game-board {
     display: flex;
     flex-direction: column;
+    position: relative;
 
     .game-row {
       display: flex;
@@ -159,6 +199,14 @@ export default {
           }
         }
       }
+    }
+    
+    .winner-line {
+      position: absolute;
+      stroke: black;
+      stroke-width: 2px;
+      height: 100%;
+      width: 100%;
     }
   }
 }
