@@ -19,6 +19,41 @@
           :x2="winnerLineCoords.x2" :y2="winnerLineCoords.y2"></line>
       </svg>
     </div>
+    <div class="info">
+      <button @click="resetValues()">Clear board</button>
+      <label class="size-selector">
+        Size: 
+        <input type="number" v-model.number="size" min="3" @change="resetValues()">
+      </label>
+      <div>
+        <label v-if="!isDraw">
+          <span>{{isWin ? 'Winner' : 'Current player'}}:&nbsp;</span>
+          <b>Player{{currentPlayer}}</b>
+        </label>
+        <label v-if="!isDraw">
+          <span>Symbol:&nbsp;</span>
+          <b>{{symbolsByPlayer[currentPlayer].toUpperCase()}}</b>
+        </label> 
+        <label v-if="isDraw">
+          <b>Draw</b>
+        </label>
+      </div>
+      <div class="statistics">
+        <h3>Statistics</h3>
+        <table>
+          <tr>
+            <th v-for="(count, player) in playerWinCount" :key="player">
+              {{isNaN(player) ? '' : 'Player'}}{{player}}
+            </th>
+          </tr>
+          <tr>
+            <td v-for="(count, player) in playerWinCount" :key="player">
+              {{count}}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -29,6 +64,7 @@ export default {
   name: 'TicTacToe',
   data() {
     return {
+      steps: 0,
       size: 3,
       gameValues: [],
       currentPlayer: '1',
@@ -36,16 +72,35 @@ export default {
         1: 'x',
         2: 'o',
       },
+      playerWinCount: {
+        1: 0,
+        'draw': 0,
+        2: 0,
+      },
       winnerLineCoords: {},
       isWin: false,
+      isDraw: false,
     }
   },
   created() {
-    for(let i = 0; i < this.size; i++) {
-      Vue.set(this.gameValues, i, Array(this.size).fill(null));
-    }
+    this.resetValues();
   },
   methods: {
+    resetValues() {
+      this.gameValues = [];
+      for(let i = 0; i < this.size; i++) {
+        Vue.set(this.gameValues, i, Array(this.size).fill(null));
+      }
+      this.isWin = false;
+      this.isDraw = false;
+      this.currentPlayer = '1';
+      this.steps = 0;
+    },
+    onSizeChange() {
+      console.log(this.size)
+      this.resetValues();
+      console.log(this.gameValues)
+    },
     setAndCheckValue(rowIndex, columnIndex) {
       if (this.gameValues[rowIndex][columnIndex] || this.isWin) {
         return;
@@ -61,6 +116,28 @@ export default {
         || this.checkWinnerVertically()
         || this.checkWinnerDiagonally();
 
+      this.steps += 1;
+      
+      if (this.isWin) { 
+        Vue.set(
+          this.playerWinCount, 
+          this.currentPlayer, 
+          this.playerWinCount[this.currentPlayer] + 1
+        );
+
+        return; 
+      }
+
+      this.isDraw = this.steps === this.size * this.size;
+
+      if (this.isDraw) {
+        Vue.set(
+          this.playerWinCount, 
+          'draw', 
+          this.playerWinCount['draw'] + 1
+        );
+      }
+      
       this.currentPlayer = this.currentPlayer === '1'
         ? '2' 
         : '1';      
@@ -207,6 +284,51 @@ export default {
       stroke-width: 2px;
       height: 100%;
       width: 100%;
+    }
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    width: 30%;
+    margin: 0 10px;
+
+    label {
+      display: inline-block;
+      width: 100%;
+    }
+
+    .size-selector {
+      display: inline-flex;
+      padding: 5px;
+      align-items: center;
+
+      input {
+        width: 80%;
+        margin-left: 5px;
+      }
+    }
+
+    button, .size-selector {
+      width: 50%;
+      align-self: center;
+    }
+
+    .statistics {
+      width: 100%;
+      font-size: 13px;
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      td, th {
+        border: 1px solid black;
+        padding: 2px 5px;
+        text-align: center;
+      }
     }
   }
 }
