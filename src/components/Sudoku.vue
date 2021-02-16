@@ -7,7 +7,9 @@
         <div class="game-cell" 
           v-for="(cell, cellIndex) in gameValues[rowIndex]" 
           :key="cellIndex">
-          {{cell}}
+          <span v-if="initialGameValues[rowIndex][cellIndex]">{{cell}}</span>
+          <input v-else type="number" min=1 :max="size"
+            @input="setAndCheckValue(rowIndex, cellIndex, $event)">
         </div>
       </div>
     </div>
@@ -23,6 +25,7 @@ export default {
     return {
       size: 9,
       gameValues: [],
+      initialGameValues: [],
       level: 0, // TODO: add level select
     }
   },
@@ -42,9 +45,23 @@ export default {
         gameValues.push(values[j] !== '0' ? parseInt(values[j]) : null);
       }
       
-      Vue.set(this.gameValues, i, gameValues);
+      Vue.set(this.gameValues, i, gameValues.slice());
+      Vue.set(this.initialGameValues, i, gameValues.slice());
     }
   },
+  methods: {
+    setAndCheckValue(rowIndex, columnIndex, event) {
+      const enteredValue = Number(event.target.value);
+      if (enteredValue < 1 || enteredValue > this.size) {
+        console.log('Bad value') //TODO: message dispaly
+        return;
+      }
+
+      Vue.set(this.gameValues[rowIndex], columnIndex, enteredValue);
+
+      //TODO: values validation
+    }
+  }
 }
 </script>
 
@@ -74,6 +91,36 @@ export default {
         &:nth-child(3n):not(:last-child) {
           border-right: 2px solid black;
         }
+
+        span {
+          background-color: #d4d4d4;
+          width: 100%;
+          height: 100%;
+          align-items: center;
+          justify-content: center;
+          display: flex;
+        }
+
+        input {
+          width: 90%;
+          height: 90%;
+          border: none;
+          text-align: center;
+          -moz-appearance: textfield;
+
+          &:focus {
+            outline: none;
+          }
+
+          &::-webkit-outer-spin-button,
+          &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+          }
+        } 
+
+        span, input {
+          font-size: 16px;
+        }       
       }
     }
   }
