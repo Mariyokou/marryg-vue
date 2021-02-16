@@ -1,16 +1,20 @@
 <template>
   <div id="app">
-    <TicTacToe/>
+    <!-- TODO: add condition when to show game -->
+    <TicTacToe v-if="false"/>
+    <Sudoku/>
   </div>
 </template>
 
 <script>
 import TicTacToe from './components/TicTacToe.vue'
+import Sudoku from './components/Sudoku.vue'
 
 export default {
   name: 'App',
   components: {
-    TicTacToe
+    TicTacToe,
+    Sudoku,
   }
 }
 </script>
