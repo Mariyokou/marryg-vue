@@ -8,7 +8,8 @@
           v-for="(cell, cellIndex) in gameValues[rowIndex]" 
           :key="cellIndex">
           <span v-if="initialGameValues[rowIndex][cellIndex]">{{cell}}</span>
-          <input v-else type="number" min=1 :max="size"
+          <input v-else type="number" min=1 :max="size" 
+            :class="{'has-error': repeatingValuesByIndex[rowIndex].includes(cell)}"
             @input="setAndCheckValue(rowIndex, cellIndex, $event)">
         </div>
       </div>
@@ -26,6 +27,7 @@ export default {
       size: 9,
       gameValues: [],
       initialGameValues: [],
+      repeatingValuesByIndex: {},
       level: 0, // TODO: add level select
     }
   },
@@ -47,6 +49,7 @@ export default {
       
       Vue.set(this.gameValues, i, gameValues.slice());
       Vue.set(this.initialGameValues, i, gameValues.slice());
+      Vue.set(this.repeatingValuesByIndex, i, []);
     }
   },
   methods: {
@@ -59,8 +62,75 @@ export default {
 
       Vue.set(this.gameValues[rowIndex], columnIndex, enteredValue);
 
-      //TODO: values validation
-    }
+      //TODO: add button for validation enabling/disabling
+      this.setRepeatingValues();
+      this.checkValuesHorizontally();
+      this.checkValuesVertically();
+      this.checkValuesRegionally();
+    },
+    setRepeatingValues() {
+      this.repeatingValuesByIndex = {};
+      this.gameValues.forEach((row, rowIndex) => {
+        this.repeatingValuesByIndex[rowIndex] = [];
+      });
+    },
+    getRepeatingValues(list) {
+      return list.filter((item, index) => 
+        item && list.indexOf(item) !== index
+      );
+    },
+    getRepeatingValueIndexes(list) {
+      const repeatingValues = this.getRepeatingValues(list);
+      
+      return list.reduce((a, e, i) => 
+        (repeatingValues.includes(e)) 
+          ? a.concat(i) 
+          : a
+      , []);
+    },
+    checkValuesHorizontally() {
+      this.gameValues.forEach((row, rowIndex) => {
+        const repeatingValues = this.getRepeatingValues(row);
+        this.repeatingValuesByIndex[rowIndex] = repeatingValues.concat(this.repeatingValuesByIndex[rowIndex]);
+      });
+    },
+    checkValuesVertically() {
+      this.gameValues.forEach((row, rowIndex) => {
+        const columnValues = [];
+        
+        row.forEach((cell, cellIndex) => {
+          columnValues.push(this.gameValues[cellIndex][rowIndex]);
+        });
+
+        const repeatingValueIndexes = this.getRepeatingValueIndexes(columnValues);
+
+        repeatingValueIndexes.forEach((index) => {
+          this.repeatingValuesByIndex[index].push(columnValues[index]);
+        });
+      });
+    },
+    checkValuesRegionally() {
+      const regionSize = Math.sqrt(this.size);
+      
+      for (let rowIndex = 0; rowIndex < this.size; rowIndex += regionSize) {
+        const rows = this.gameValues.slice(rowIndex, rowIndex + regionSize);
+
+        for (let cellIndex = 0; cellIndex < this.size; cellIndex += regionSize) {
+          const regions = [];
+
+          for (let rowIndexInRegion = 0; rowIndexInRegion < regionSize; rowIndexInRegion++) {
+            regions.push(...rows[rowIndexInRegion].slice(cellIndex, cellIndex + regionSize));
+          }
+
+          const repeatingValueIndexes = this.getRepeatingValueIndexes(regions);
+
+          repeatingValueIndexes.forEach((index) => {
+            const repeatingRowIndex = Math.floor(index / regionSize) + rowIndex;
+            this.repeatingValuesByIndex[repeatingRowIndex].push(regions[index]);
+          });
+        }
+      }
+    },
   }
 }
 </script>
@@ -75,6 +145,7 @@ export default {
 
     .game-row {
       display: flex;
+      justify-content: center;
       
       &:nth-child(3n) {
         border-bottom: 2px solid black;
@@ -107,6 +178,10 @@ export default {
           border: none;
           text-align: center;
           -moz-appearance: textfield;
+
+          &.has-error {
+            color: red;
+          }
 
           &:focus {
             outline: none;
